@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<title>Dolly Bob Wave</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --grad1:#7c3aed;--grad2:#2563eb;--grad3:#06b6d4;
+  --bg:#0f0c29;--card:#1a1740;--card2:#221e50;
+  --text:#f0f0ff;--sub:#a0a8d0;--border:#2d2a60;
+  --hit:#10b981;--miss:#ef4444;--amber:#f59e0b;
+  --shadow:0 4px 20px rgba(124,58,237,.3);
+}
+body{background:var(--bg);color:var(--text);font-family:"Hiragino Sans","Yu Gothic",sans-serif;min-height:100vh;padding-bottom:70px;}
+/* Header */
+#stickyTop{position:sticky;top:0;z-index:200;}
+header{background:linear-gradient(135deg,var(--grad1),var(--grad2),var(--grad3));padding:10px 14px 8px;}
+.h-row1{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.app-title{font-size:22px;font-weight:900;color:#fff;letter-spacing:1px;text-shadow:0 2px 8px rgba(0,0,0,.4);}
+.app-title em{font-style:normal;color:#fde68a;}
+.refresh-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:20px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer;backdrop-filter:blur(4px);}
+.refresh-btn:active{background:rgba(255,255,255,.35);}
+.h-stats{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+.stat-chip{background:rgba(0,0,0,.25);border-radius:12px;padding:3px 10px;font-size:13px;font-weight:800;color:#fff;white-space:nowrap;}
+.stat-chip.green{color:#6ee7b7;}
+.stat-chip.amber{color:#fde68a;}
+.stat-chip.blue{color:#93c5fd;}
+.h-date{font-size:11px;color:rgba(255,255,255,.7);margin-top:2px;}
+/* Venue tabs */
+#venueWrap{background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+#venueWrap::-webkit-scrollbar{display:none;}
+.vtab{display:inline-block;padding:9px 14px;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;}
+.vtab.active{color:#c4b5fd;border-bottom-color:#7c3aed;}
+.vtag{font-size:10px;border-radius:4px;padding:1px 4px;margin-left:3px;}
+.vtag.nighter{background:#1e1b4b;color:#818cf8;}
+.vtag.morning{background:#1c1917;color:#fb923c;}
+.vtag.ladies{background:#4a044e;color:#f0abfc;}
+/* Race buttons */
+#raceWrap{background:var(--card2);padding:8px 10px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+#raceWrap::-webkit-scrollbar{display:none;}
+.rbtn{display:inline-block;width:44px;height:36px;line-height:36px;text-align:center;border-radius:8px;font-size:13px;font-weight:800;margin-right:4px;cursor:pointer;background:var(--card);color:var(--sub);border:1px solid var(--border);transition:all .15s;}
+.rbtn.active{background:linear-gradient(135deg,var(--grad1),var(--grad2));color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(124,58,237,.5);}
+.rbtn.done{background:#064e3b;color:#6ee7b7;border-color:#065f46;}
+.rbtn.hit{background:#065f46;color:#34d399;border-color:#059669;}
+/* Main content */
+#main{padding:12px 12px 0;}
+.status-bar{font-size:12px;color:var(--sub);padding:4px 0 8px;text-align:center;}
+/* Prediction cards */
+.pred-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+@media(max-width:360px){.pred-grid{grid-template-columns:1fr;}}
+.pred-card{background:var(--card);border-radius:14px;padding:12px;border:1px solid var(--border);position:relative;overflow:hidden;}
+.pred-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.pred-card.honmei::before{background:linear-gradient(90deg,var(--grad1),var(--grad2));}
+.pred-card.ana::before{background:linear-gradient(90deg,var(--amber),#ef4444);}
+.pred-label{font-size:11px;font-weight:800;letter-spacing:1px;margin-bottom:6px;}
+.pred-card.honmei .pred-label{color:#a78bfa;}
+.pred-card.ana .pred-label{color:#fbbf24;}
+.pred-combo{font-size:26px;font-weight:900;letter-spacing:2px;line-height:1;}
+.pred-card.honmei .pred-combo{color:#c4b5fd;}
+.pred-card.ana .pred-combo{color:#fde68a;}
+.pred-amount{font-size:11px;color:var(--sub);margin-top:4px;}
+.pred-hit-badge{display:inline-block;background:#065f46;color:#34d399;font-size:10px;font-weight:800;border-radius:6px;padding:2px 7px;margin-top:5px;}
+.pred-miss-badge{display:inline-block;background:#450a0a;color:#fca5a5;font-size:10px;font-weight:800;border-radius:6px;padding:2px 7px;margin-top:5px;}
+/* Boats table */
+.boats-card{background:var(--card);border-radius:14px;padding:12px;border:1px solid var(--border);margin-bottom:12px;}
+.boats-title{font-size:12px;font-weight:800;color:var(--sub);margin-bottom:8px;letter-spacing:.5px;}
+.boat-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);}
+.boat-row:last-child{border-bottom:none;}
+.boat-lane{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;}
+.boat-name{flex:1;font-size:13px;font-weight:700;}
+.boat-score{font-size:12px;font-weight:800;color:#a78bfa;width:38px;text-align:right;}
+.boat-et{font-size:11px;color:var(--sub);width:38px;text-align:right;}
+.lane-colors{1:background:#fff;color:#000;}
+/* Hit list */
+.hits-card{background:var(--card);border-radius:14px;padding:12px;border:1px solid var(--border);margin-bottom:12px;}
+.hits-title{font-size:12px;font-weight:800;color:var(--sub);margin-bottom:8px;letter-spacing:.5px;}
+.hit-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
+.hit-row:last-child{border-bottom:none;}
+.hit-idx{width:22px;font-size:12px;color:var(--sub);text-align:center;}
+.hit-venue{font-size:12px;font-weight:700;flex:1;}
+.hit-combo{font-size:15px;font-weight:900;letter-spacing:1px;}
+.hit-type{font-size:10px;border-radius:5px;padding:1px 6px;font-weight:800;}
+.hit-type.honmei{background:#3730a3;color:#c4b5fd;}
+.hit-type.ana{background:#78350f;color:#fde68a;}
+.hit-yen{font-size:13px;font-weight:800;color:#34d399;width:65px;text-align:right;}
+.empty-note{font-size:13px;color:var(--sub);text-align:center;padding:16px 0;}
+/* Graph */
+.graph-card{background:var(--card);border-radius:14px;padding:12px;border:1px solid var(--border);margin-bottom:12px;}
+.graph-title{font-size:12px;font-weight:800;color:var(--sub);margin-bottom:8px;letter-spacing:.5px;}
+canvas{width:100%!important;max-height:160px;}
+/* Tabs bottom */
+#tabBar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100;}
+.tbtab{flex:1;padding:8px 0 10px;text-align:center;font-size:10px;font-weight:700;color:var(--sub);cursor:pointer;}
+.tbtab.active{color:#a78bfa;}
+.tbtab .icon{font-size:20px;display:block;}
+/* Loading */
+.loading{text-align:center;padding:40px;color:var(--sub);}
+.loading-wave{font-size:32px;animation:wave 1s infinite;}
+@keyframes wave{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+/* Lane colors */
+.lc1{background:#fff;color:#000;}
+.lc2{background:#000;color:#fff;}
+.lc3{background:#e11d48;color:#fff;}
+.lc4{background:#2563eb;color:#fff;}
+.lc5{background:#f59e0b;color:#000;}
+.lc6{background:#16a34a;color:#fff;}
+</style>
+</head>
+<body>
+<div id="stickyTop">
+  <header>
+    <div class="h-row1">
+      <div class="app-title">🌊 Dolly Bob <em>Wave</em></div>
+      <button class="refresh-btn" onclick="doRefresh()">↺ 更新</button>
+    </div>
+    <div class="h-stats" id="headerStats">
+      <span class="stat-chip blue">読込中...</span>
+    </div>
+    <div class="h-date" id="headerDate"></div>
+  </header>
+  <div id="venueWrap"><div id="venueTabs"></div></div>
+  <div id="raceWrap"><div id="raceBtns"></div></div>
+</div>
+<div id="main">
+  <div class="status-bar" id="statusBar">データ取得中...</div>
+  <div id="pageRace" style="display:none">
+    <div class="pred-grid" id="predGrid"></div>
+    <div class="boats-card" id="boatsCard" style="display:none">
+      <div class="boats-title">📊 出走選手スコア</div>
+      <div id="boatsList"></div>
+    </div>
+  </div>
+  <div id="pageHits" style="display:none">
+    <div class="hits-card">
+      <div class="hits-title">🎯 本日の的中</div>
+      <div id="hitList"><div class="empty-note">的中記録なし</div></div>
+      <div id="hitTotal" style="font-size:13px;font-weight:800;color:#34d399;padding-top:8px;text-align:right;"></div>
+    </div>
+    <div class="graph-card">
+      <div class="graph-title">📈 収支グラフ（過去30日）</div>
+      <canvas id="graphCanvas"></canvas>
+    </div>
+  </div>
+</div>
+<div id="tabBar">
+  <div class="tbtab active" id="tabRace" onclick="switchTab('race')"><span class="icon">🎰</span>予想</div>
+  <div class="tbtab" id="tabHits" onclick="switchTab('hits')"><span class="icon">🏆</span>的中</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+'use strict';
+const OPENAPI_TODAY='https://boatraceopenapi.github.io/programs/v3/today.json';
+const OPENAPI_PROGRAMS=(y,ymd)=>`https://boatraceopenapi.github.io/programs/v3/${y}/${ymd}.json`;
+const VENUE_NAMES={1:'桐生',2:'戸田',3:'江戸川',4:'平和島',5:'多摩川',6:'浜名湖',7:'蒲郡',8:'常滑',
+  9:'津',10:'三国',11:'びわこ',12:'住之江',13:'尼崎',14:'鳴門',15:'丸亀',16:'児島',17:'宮島',
+  18:'徳山',19:'下関',20:'若松',21:'芦屋',22:'福岡',23:'唐津',24:'大村'};
+const COST_PER_RACE=200;
+
+let programs=[],venues=[];
+let currentVenue=null,currentRace=null;
+let beforeData=null,oddsData=null;
+let currentYMD='';
+let allResults={};
+let chartInst=null;
+
+function doRefresh(){
+  try{if(currentVenue)localStorage.setItem('_wRefreshSn',currentVenue.sn);if(currentRace)localStorage.setItem('_wRefreshRno',currentRace.number);}catch{}
+  location.reload(true);
+}
+function getToday(){
+  const jst=new Date(Date.now()+9*3600*1000);
+  return `${jst.getUTCFullYear()}${String(jst.getUTCMonth()+1).padStart(2,'0')}${String(jst.getUTCDate()).padStart(2,'0')}`;
+}
+function formatDate(ymd){
+  if(!ymd||ymd.length<8)return '';
+  const d=new Date(`${ymd.slice(0,4)}-${ymd.slice(4,6)}-${ymd.slice(6,8)}`);
+  const dow=['日','月','火','水','木','金','土'];
+  return `${ymd.slice(0,4)}年${parseInt(ymd.slice(4,6))}月${parseInt(ymd.slice(6,8))}日（${dow[d.getDay()]}）`;
+}
+function setStatus(msg){document.getElementById('statusBar').textContent=msg;}
+function cn(n){const c='①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';return n>=1&&n<=20?c[n-1]:n+'.';}
+
+// ========== Score ==========
+function calcScore(b, bd){
+  let s=0;
+  const course=b.racer_boat_number;
+  s+=({1:10,2:4,3:1,4:-2,5:-5,6:-8}[course]??-8);
+  s+=(parseFloat(b.national_win_rate||0)*3);
+  s+=(parseFloat(b.local_win_rate||0)*2);
+  s+=(parseFloat(b.motor_2rate||0)*1.5);
+  s+=({1:4,2:0,3:-3,4:-8}[b.racer_class_number]??-3);
+  if(bd){
+    const bi=bd.find(x=>x.lane===course);
+    if(bi&&bi.exhibitionTime){
+      const et=bi.exhibitionTime;
+      s+=(et<=6.60?8:et<=6.65?5:et<=6.70?2:et<=6.75?-1:-4);
+    }
+  }
+  return s;
+}
+
+// ========== Prediction ==========
+function selectBets(boats, odds){
+  const bd=beforeData||null;
+  const scored=boats.map(b=>({...b,_score:calcScore(b,bd)})).sort((a,b)=>b._score-a._score);
+  const honmei=`${scored[0].racer_boat_number}-${scored[1].racer_boat_number}-${scored[2].racer_boat_number}`;
+  let ana=null;
+  if(odds&&Object.keys(odds).length>0){
+    const sm={};
+    scored.forEach((b,i)=>{sm[b.racer_boat_number]=b._score;});
+    const mansen=Object.entries(odds)
+      .filter(([k,v])=>v>=50)
+      .map(([k,v])=>({combo:k,odds:v,score:k.split('-').map(Number).reduce((a,ln)=>a+(sm[ln]||0),0)+v*0.05}))
+      .sort((a,b)=>b.score-a.score);
+    if(mansen.length>0)ana=mansen[0].combo;
+  }
+  if(!ana){
+    ana=`${scored[1].racer_boat_number}-${scored[0].racer_boat_number}-${scored[2].racer_boat_number}`;
+  }
+  return {honmei,ana,scored};
+}
+
+// ========== localStorage ==========
+function getPredKey(){return `wv_pred_${currentYMD}_${currentVenue.sn}_${currentRace.number}`;}
+function getHitsKey(ymd){return `wv_hits_${ymd||currentYMD||getToday()}`;}
+function loadHits(ymd){try{return JSON.parse(localStorage.getItem(getHitsKey(ymd))||'[]');}catch{return[];}}
+function saveHits(list){try{localStorage.setItem(getHitsKey(),JSON.stringify(list));}catch{}}
+
+function addHitRecord(h,venueName,raceNo){
+  const list=loadHits();
+  const venue=venueName||(currentVenue?currentVenue.name:'不明');
+  const race=raceNo||(currentRace?currentRace.number:'-');
+  if(list.find(x=>x.venue===venue&&x.race===race&&x.type===h.type))return;
+  list.push({id:Date.now(),venue,race,type:h.type,combo:h.combo,amount:h.amount});
+  saveHits(list);
+  renderHits();
+  updateHeaderStats();
+}
+
+// ========== Header stats ==========
+function updateHeaderStats(){
+  const ymd=currentYMD||getToday();
+  const hits=loadHits(ymd);
+  const hitCount=hits.length;
+  // Count finished races
+  let finished=0;
+  venues.forEach(v=>v.races.forEach(r=>{if(allResults[`${v.sn}_${r.number}`])finished++;}));
+  const rate=finished>0?(hitCount/finished*100).toFixed(1):'0.0';
+  const payout=hits.reduce((a,h)=>a+h.amount,0);
+  const invest=finished*COST_PER_RACE;
+  const profit=payout-invest;
+  const el=document.getElementById('headerStats');
+  el.innerHTML=`
+    <span class="stat-chip green">🎯 ${hitCount}的中</span>
+    <span class="stat-chip amber">📊 ${rate}%</span>
+    <span class="stat-chip ${profit>=0?'green':'blue'}">💴 ${profit>=0?'+':''}${profit.toLocaleString()}円</span>
+  `;
+}
+
+// ========== Venue / Race tabs ==========
+function getNextDeadline(v){
+  const unfinished=v.races.filter(r=>!allResults[`${v.sn}_${r.number}`]);
+  if(unfinished.length===0){
+    const last=v.races[v.races.length-1];
+    return 'Z'+(last.closed_at||'9999-99-99 99:99:99');
+  }
+  return unfinished.map(r=>r.closed_at||'9999-99-99 99:99:99').sort()[0];
+}
+
+function rebuildVenueTabs(){
+  venues.sort((a,b)=>getNextDeadline(a).localeCompare(getNextDeadline(b)));
+  const cur=currentVenue?currentVenue.sn:null;
+  document.getElementById('venueTabs').innerHTML=venues.map(v=>{
+    const done=v.races.every(r=>allResults[`${v.sn}_${r.number}`]);
+    const tags=getVenueTags(v);
+    return `<span class="vtab${v.sn===cur?' active':''}" onclick="selectVenue(${v.sn})">${done?'<span style="opacity:.45">':''} ${v.name}${tags}${done?'</span>':''}</span>`;
+  }).join('');
+}
+
+function getVenueTags(v){
+  let t='';
+  const r0=v.races[0];if(!r0)return t;
+  const title=String(r0.title||'').toLowerCase();
+  const hhmm=(r0.closed_at||'').slice(11,16);
+  if(/モーニング|morning/.test(title)||(hhmm&&hhmm<'09:30'))t+='<span class="vtag morning">🌅</span>';
+  if(/ナイター|nighter|night/.test(title))t+='<span class="vtag nighter">🌙</span>';
+  if(/レディース|ladies/.test(title))t+='<span class="vtag ladies">💛</span>';
+  return t;
+}
+
+function selectVenue(sn){
+  currentVenue=venues.find(v=>v.sn===sn);
+  if(!currentVenue)return;
+  rebuildVenueTabs();
+  // auto-select next unfinished race
+  const next=currentVenue.races.find(r=>!allResults[`${sn}_${r.number}`]);
+  selectRace(next?next.number:currentVenue.races[currentVenue.races.length-1].number);
+}
+
+function buildRaceButtons(){
+  if(!currentVenue)return;
+  document.getElementById('raceBtns').innerHTML=currentVenue.races.map(r=>{
+    const key=`${currentVenue.sn}_${r.number}`;
+    const done=!!allResults[key];
+    const hits=loadHits();
+    const isHit=done&&hits.find(h=>h.venue===currentVenue.name&&h.race===r.number);
+    let cls='rbtn';
+    if(currentRace&&currentRace.number===r.number)cls+=' active';
+    else if(isHit)cls+=' hit';
+    else if(done)cls+=' done';
+    return `<span class="${cls}" onclick="selectRace(${r.number})">${r.number}R</span>`;
+  }).join('');
+}
+
+function selectRace(rno){
+  if(!currentVenue)return;
+  currentRace=currentVenue.races.find(r=>r.number===rno);
+  if(!currentRace)return;
+  beforeData=null;oddsData=null;
+  buildRaceButtons();
+  renderRaceCard();
+  loadBeforeInfo();
+  loadOdds();
+}
+
+function updateRaceButtonStates(){buildRaceButtons();}
+
+// ========== Race card ==========
+function renderRaceCard(){
+  if(!currentRace||!currentVenue){document.getElementById('pageRace').style.display='none';return;}
+  document.getElementById('pageRace').style.display='';
+  renderPrediction();
+  renderBoats();
+}
+
+function renderPrediction(){
+  if(!currentRace||!currentVenue)return;
+  const boats=currentRace.boats||[];
+  if(boats.length<3){document.getElementById('predGrid').innerHTML='<div class="empty-note">選手データなし</div>';return;}
+  const key=getPredKey();
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem(key)||'null');}catch{}
+  let honmei,ana;
+  if(saved){honmei=saved.honmei;ana=saved.ana;}
+  else{
+    const bets=selectBets(boats,oddsData);
+    honmei=bets.honmei;ana=bets.ana;
+    // Save prediction
+    try{localStorage.setItem(key,JSON.stringify({venue:currentVenue.name,sn:currentVenue.sn,race:currentRace.number,hd:currentYMD,honmei,ana}));}catch{}
+  }
+  const res=allResults[`${currentVenue.sn}_${currentRace.number}`];
+  const hBadge=res?(res.combo===honmei?'<span class="pred-hit-badge">✓ 的中</span>':'<span class="pred-miss-badge">✗ 外れ</span>'):'';
+  const aBadge=res?(res.combo===ana?'<span class="pred-hit-badge">✓ 的中</span>':'<span class="pred-miss-badge">✗ 外れ</span>'):'';
+  document.getElementById('predGrid').innerHTML=`
+    <div class="pred-card honmei">
+      <div class="pred-label">◎ 本命</div>
+      <div class="pred-combo">${honmei}</div>
+      <div class="pred-amount">¥100</div>
+      ${hBadge}
+    </div>
+    <div class="pred-card ana">
+      <div class="pred-label">△ 万舟穴</div>
+      <div class="pred-combo">${ana}</div>
+      <div class="pred-amount">¥100</div>
+      ${aBadge}
+    </div>
+  `;
+}
+
+function renderBoats(){
+  if(!currentRace)return;
+  const boats=currentRace.boats||[];
+  if(boats.length===0){document.getElementById('boatsCard').style.display='none';return;}
+  document.getElementById('boatsCard').style.display='';
+  const bd=beforeData||null;
+  const scored=boats.map(b=>({...b,_score:calcScore(b,bd)})).sort((a,b)=>b._score-a._score);
+  const lc=['lc1','lc2','lc3','lc4','lc5','lc6'];
+  document.getElementById('boatsList').innerHTML=scored.map(b=>{
+    const bi=bd?bd.find(x=>x.lane===b.racer_boat_number):null;
+    const et=bi&&bi.exhibitionTime?bi.exhibitionTime.toFixed(2):'--';
+    return `<div class="boat-row">
+      <div class="boat-lane ${lc[(b.racer_boat_number-1)%6]}">${b.racer_boat_number}</div>
+      <div class="boat-name">${b.racer_name||''}  <span style="font-size:10px;color:var(--sub)">${b.racer_class||''}</span></div>
+      <div class="boat-score">${b._score.toFixed(1)}</div>
+      <div class="boat-et">${et}</div>
+    </div>`;
+  }).join('');
+}
+
+// ========== Hits ==========
+function renderHits(){
+  const list=loadHits();
+  const el=document.getElementById('hitList');
+  const tot=document.getElementById('hitTotal');
+  if(list.length===0){el.innerHTML='<div class="empty-note">的中記録なし</div>';tot.innerHTML='';return;}
+  const total=list.reduce((a,h)=>a+h.amount,0);
+  el.innerHTML=list.slice().reverse().map((h,i,arr)=>`
+    <div class="hit-row">
+      <div class="hit-idx">${cn(arr.length-i)}</div>
+      <div class="hit-venue">${h.venue} ${h.race}R</div>
+      <div class="hit-combo">${h.combo}</div>
+      <span class="hit-type ${h.type}">${h.type==='honmei'?'本命':'万舟穴'}</span>
+      <div class="hit-yen">¥${h.amount.toLocaleString()}</div>
+    </div>`).join('');
+  tot.innerHTML=`合計払戻 ¥${total.toLocaleString()}`;
+}
+
+// ========== Graph ==========
+function renderGraph(){
+  const canvas=document.getElementById('graphCanvas');
+  const ctx=canvas.getContext('2d');
+  const today=new Date(Date.now()+9*3600*1000);
+  const labels=[],profits=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date(today);d.setUTCDate(d.getUTCDate()-i);
+    const ymd=`${d.getUTCFullYear()}${String(d.getUTCMonth()+1).padStart(2,'0')}${String(d.getUTCDate()).padStart(2,'0')}`;
+    const hits=loadHits(ymd);
+    const payout=hits.reduce((a,h)=>a+h.amount,0);
+    // Estimate invest from hit count (rough: assume ~5 races/hit = invest)
+    labels.push(`${parseInt(ymd.slice(4,6))}/${parseInt(ymd.slice(6,8))}`);
+    profits.push(payout);
+  }
+  if(chartInst)chartInst.destroy();
+  chartInst=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'払戻合計',
+        data:profits,
+        backgroundColor:profits.map(v=>v>0?'rgba(52,211,153,.7)':'rgba(239,68,68,.5)'),
+        borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#a0a8d0',font:{size:9}},grid:{color:'rgba(255,255,255,.05)'}},
+        y:{ticks:{color:'#a0a8d0',font:{size:9}},grid:{color:'rgba(255,255,255,.05)'}}
+      }
+    }
+  });
+}
+
+// ========== Tab switch ==========
+function switchTab(t){
+  document.getElementById('pageRace').style.display=t==='race'?'':'none';
+  document.getElementById('pageHits').style.display=t==='hits'?'':'none';
+  document.getElementById('tabRace').className='tbtab'+(t==='race'?' active':'');
+  document.getElementById('tabHits').className='tbtab'+(t==='hits'?' active':'');
+  if(t==='hits'){renderHits();renderGraph();}
+}
+
+// ========== API calls ==========
+async function loadBeforeInfo(){
+  if(!currentRace||!currentVenue)return;
+  try{
+    const r=await fetch(`/api/beforeinfo?jcd=${currentVenue.sn}&hd=${currentYMD}&rno=${currentRace.number}`,{cache:'no-store'});
+    const data=await r.json();
+    if(!data.ok)throw new Error(data.error);
+    beforeData=data.boats;
+    if(data.weather)currentRace._weather=data.weather;
+    renderBoats();
+    renderPrediction();
+  }catch{beforeData=[];}
+}
+
+async function loadOdds(){
+  if(!currentRace||!currentVenue)return;
+  try{
+    const r=await fetch(`/api/odds3t?jcd=${currentVenue.sn}&hd=${currentYMD}&rno=${currentRace.number}`,{cache:'no-store'});
+    const data=await r.json();
+    if(!data.ok)throw new Error(data.error);
+    oddsData=data.odds;
+    setStatus(`万舟候補 ${Object.values(data.odds).filter(v=>v>=50).length}点`);
+    renderPrediction();
+  }catch{oddsData={};}
+}
+
+async function autoSweep(){
+  try{
+    const r=await fetch(`/api/allresults?hd=${currentYMD}`,{cache:'no-store'});
+    const data=await r.json();
+    if(!data.ok)return;
+    allResults=data.results;
+    rebuildVenueTabs();
+    updateRaceButtonStates();
+    let hits=0;
+    for(const venue of venues){
+      for(const race of venue.races){
+        const boats=race.boats||[];
+        if(boats.length<3)continue;
+        const res=allResults[`${venue.sn}_${race.number}`];
+        if(!res)continue;
+        let honmei,ana;
+        try{
+          const saved=JSON.parse(localStorage.getItem(`wv_pred_${currentYMD}_${venue.sn}_${race.number}`)||'null');
+          if(saved){honmei=saved.honmei;ana=saved.ana;}
+        }catch{}
+        if(!honmei){
+          const scored=boats.map(b=>({...b,_score:calcScore(b,null)})).sort((a,b)=>b._score-a._score);
+          honmei=`${scored[0].racer_boat_number}-${scored[1].racer_boat_number}-${scored[2].racer_boat_number}`;
+          ana=`${scored[1].racer_boat_number}-${scored[0].racer_boat_number}-${scored[2].racer_boat_number}`;
+        }
+        if(honmei===res.combo){addHitRecord({type:'honmei',combo:honmei,amount:res.payout},venue.name,race.number);hits++;}
+        else if(ana&&ana===res.combo){addHitRecord({type:'ana',combo:ana,amount:res.payout},venue.name,race.number);hits++;}
+      }
+    }
+    if(hits>0)setStatus(`🎯 ${hits}的中！`);
+    updateHeaderStats();
+    if(currentRace&&currentVenue)renderPrediction();
+  }catch{}
+}
+
+// ========== Init ==========
+async function init(){
+  currentYMD=getToday();
+  document.getElementById('headerDate').textContent=formatDate(currentYMD);
+  document.getElementById('main').innerHTML=`<div class="loading"><span class="loading-wave">🌊</span><div style="margin-top:12px;font-size:14px;color:var(--sub)">データ取得中...</div></div>`;
+
+  try{
+    const todayRes=await fetch(OPENAPI_TODAY,{cache:'no-store'});
+    const todayData=await todayRes.json();
+    const ymd=todayData.date||currentYMD;
+    currentYMD=ymd.replace(/-/g,'');
+    const year=currentYMD.slice(0,4);
+    const progRes=await fetch(OPENAPI_PROGRAMS(year,currentYMD),{cache:'no-store'});
+    const progData=await progRes.json();
+    programs=progData.programs||[];
+  }catch(e){
+    document.getElementById('main').innerHTML=`<div class="loading" style="color:var(--miss)">データ取得失敗<br><span style="font-size:12px">${e.message}</span></div>`;
+    return;
+  }
+
+  // Rebuild main
+  document.getElementById('main').innerHTML=`
+    <div class="status-bar" id="statusBar">予想ロード中...</div>
+    <div id="pageRace" style="display:none">
+      <div class="pred-grid" id="predGrid"></div>
+      <div class="boats-card" id="boatsCard" style="display:none">
+        <div class="boats-title">📊 出走選手スコア</div>
+        <div id="boatsList"></div>
+      </div>
+    </div>
+    <div id="pageHits" style="display:none">
+      <div class="hits-card">
+        <div class="hits-title">🎯 本日の的中</div>
+        <div id="hitList"><div class="empty-note">的中記録なし</div></div>
+        <div id="hitTotal" style="font-size:13px;font-weight:800;color:#34d399;padding-top:8px;text-align:right;"></div>
+      </div>
+      <div class="graph-card">
+        <div class="graph-title">📈 収支グラフ（過去30日）</div>
+        <canvas id="graphCanvas"></canvas>
+      </div>
+    </div>`;
+
+  // Build venues
+  const map={};
+  programs.forEach(p=>{
+    if(!map[p.stadium_number])map[p.stadium_number]=[];
+    map[p.stadium_number].push(p);
+  });
+  venues=Object.keys(map).map(sn=>({
+    sn:parseInt(sn),
+    name:VENUE_NAMES[parseInt(sn)]||`場${sn}`,
+    races:map[sn].sort((a,b)=>a.number-b.number)
+  }));
+
+  // Initial allresults
+  await autoSweep();
+  rebuildVenueTabs();
+
+  // Restore after refresh
+  let restoreSn=null,restoreRno=null;
+  try{
+    restoreSn=parseInt(localStorage.getItem('_wRefreshSn')||'');
+    restoreRno=parseInt(localStorage.getItem('_wRefreshRno')||'');
+    localStorage.removeItem('_wRefreshSn');
+    localStorage.removeItem('_wRefreshRno');
+  }catch{}
+
+  if(venues.length>0){
+    const targetSn=(restoreSn&&venues.find(v=>v.sn===restoreSn))?restoreSn:venues[0].sn;
+    selectVenue(targetSn);
+    if(restoreRno){setTimeout(()=>selectRace(restoreRno),50);}
+  }
+
+  setStatus('');
+  document.getElementById('pageRace').style.display='';
+  updateHeaderStats();
+
+  // Auto sweep every 30s
+  setInterval(autoSweep,30000);
+}
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
+window.addEventListener('load',init);
+</script>
+</body>
+</html>
