@@ -566,6 +566,14 @@ async function init(){
     races:map[sn].sort((a,b)=>a.number-b.number)
   }));
 
+  // Header: 本日 ○○R（○○開催地）
+  {
+    const venueCount=venues.length;
+    const raceCount=venues.reduce((a,v)=>a+v.races.length,0);
+    document.getElementById('headerDate').textContent=
+      formatDate(currentYMD)+`　本日 ${raceCount}R（${venueCount}開催地）`;
+  }
+
   // Initial allresults
   await autoSweep();
   rebuildVenueTabs();
