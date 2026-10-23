@@ -131,10 +131,6 @@ canvas{width:100%!important;max-height:160px;}
   <div class="status-bar" id="statusBar">データ取得中...</div>
   <div id="pageRace" style="display:none">
     <div class="pred-grid" id="predGrid"></div>
-    <div class="boats-card" id="boatsCard" style="display:none">
-      <div class="boats-title">📊 出走選手スコア</div>
-      <div id="boatsList"></div>
-    </div>
   </div>
   <div id="pageHits" style="display:none">
     <div class="hits-card">
@@ -374,10 +370,11 @@ function renderPrediction(){
 }
 
 function renderBoats(){
+  return; // パネル非表示
   if(!currentRace)return;
   const boats=currentRace.boats||[];
-  if(boats.length===0){document.getElementById('boatsCard').style.display='none';return;}
-  document.getElementById('boatsCard').style.display='';
+  if(boats.length===0){return;}
+
   const bd=beforeData||null;
   const scored=boats.map(b=>({...b,_score:calcScore(b,bd)})).sort((a,b)=>b._score-a._score);
   const lc=['lc1','lc2','lc3','lc4','lc5','lc6'];
@@ -544,10 +541,6 @@ async function init(){
     <div class="status-bar" id="statusBar">予想ロード中...</div>
     <div id="pageRace" style="display:none">
       <div class="pred-grid" id="predGrid"></div>
-      <div class="boats-card" id="boatsCard" style="display:none">
-        <div class="boats-title">📊 出走選手スコア</div>
-        <div id="boatsList"></div>
-      </div>
     </div>
     <div id="pageHits" style="display:none">
       <div class="hits-card">
