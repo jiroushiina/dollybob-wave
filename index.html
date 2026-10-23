@@ -259,7 +259,7 @@ function updateHeaderStats(){
   el.innerHTML=`
     <span class="stat-chip green">🎯 ${hitCount}的中</span>
     <span class="stat-chip amber">📊 ${rate}%</span>
-    <span class="stat-chip ${profit>=0?'green':'blue'}">💴 ${profit>=0?'+':''}${profit.toLocaleString()}円</span>
+    <span class="stat-chip ${payout>=0?'green':'blue'}">💴 +${payout.toLocaleString()}円</span>
   `;
 }
 
